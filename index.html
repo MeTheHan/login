@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap / Kayıt Ol</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 40px 30px;
+        }
+        
+        .form-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 28px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #2575fc;
+            outline: none;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            margin-bottom: 15px;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .switch-form {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .switch-form a {
+            color: #2575fc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .message {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Giriş Formu -->
+        <div id="loginForm">
+            <h2 class="form-title">Giriş Yap</h2>
+            <div id="loginMessage" class="message"></div>
+            
+            <div class="input-group">
+                <label for="loginEmail">E-posta</label>
+                <input type="email" id="loginEmail" placeholder="E-postanızı girin">
+            </div>
+            
+            <div class="input-group">
+                <label for="loginPassword">Şifre</label>
+                <input type="password" id="loginPassword" placeholder="Şifrenizi girin">
+            </div>
+            
+            <button class="btn" onclick="login()">Giriş Yap</button>
+            
+            <div class="switch-form">
+                Hesabınız yok mu? <a onclick="showSignup()">Kayıt Ol</a>
+            </div>
+        </div>
+
+        <!-- Kayıt Formu -->
+        <div id="signupForm" class="hidden">
+            <h2 class="form-title">Kayıt Ol</h2>
+            <div id="signupMessage" class="message"></div>
+            
+            <div class="input-group">
+                <label for="signupName">Ad Soyad</label>
+                <input type="text" id="signupName" placeholder="Adınızı ve soyadınızı girin">
+            </div>
+            
+            <div class="input-group">
+                <label for="signupEmail">E-posta</label>
+                <input type="email" id="signupEmail" placeholder="E-postanızı girin">
+            </div>
+            
+            <div class="input-group">
+                <label for="signupPassword">Şifre</label>
+                <input type="password" id="signupPassword" placeholder="Şifrenizi girin (min. 6 karakter)">
+            </div>
+            
+            <button class="btn" onclick="signup()">Kayıt Ol</button>
+            
+            <div class="switch-form">
+                Zaten hesabınız var mı? <a onclick="showLogin()">Giriş Yap</a>
+            </div>
+        </div>
+
+        <!-- Kullanıcı Paneli -->
+        <div id="userPanel" class="hidden">
+            <h2 class="form-title">Hoş Geldiniz!</h2>
+            <div id="userInfo" class="message success"></div>
+            <button class="btn" onclick="logout()">Çıkış Yap</button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase konfigürasyonu - SENİN BİLGİLERİNLE
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXbv4aK-PyVvfIcsaDK_wGK2taL7vqwmg",
+            authDomain: "login-77be0.firebaseapp.com",
+            projectId: "login-77be0",
+            storageBucket: "login-77be0.firebasestorage.app",
+            messagingSenderId: "631209373102",
+            appId: "1:631209373102:web:11ba283b57b8d12fc02c3f"
+        };
+
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Form geçiş fonksiyonları
+        function showSignup() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+            clearMessages();
+        }
+
+        function showLogin() {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            clearMessages();
+        }
+
+        function showUserPanel() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('userPanel').classList.remove('hidden');
+        }
+
+        function clearMessages() {
+            document.getElementById('loginMessage').style.display = 'none';
+            document.getElementById('signupMessage').style.display = 'none';
+        }
+
+        // Mesaj göster fonksiyonu
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `message ${type}`;
+            element.style.display = 'block';
+        }
+
+        // KAYIT OL fonksiyonu
+        async function signup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            if (!name || !email || !password) {
+                showMessage('signupMessage', 'Lütfen tüm alanları doldurun!', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('signupMessage', 'Şifre en az 6 karakter olmalıdır!', 'error');
+                return;
+            }
+
+            const btn = document.querySelector('#signupForm .btn');
+            btn.disabled = true;
+            btn.textContent = 'Kayıt Yapılıyor...';
+
+            try {
+                // Kullanıcı oluştur
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Firestore'a kullanıcı bilgilerini kaydet
+                await db.collection('users').doc(user.uid).set({
+                    name: name,
+                    email: email,
+                    createdAt: new Date(),
+                    lastLogin: new Date()
+                });
+
+                showMessage('signupMessage', 'Kayıt başarılı! Hoş geldiniz!', 'success');
+                
+                // 2 saniye sonra kullanıcı panelini göster
+                setTimeout(() => {
+                    showUserPanel();
+                    document.getElementById('userInfo').textContent = `Hoş geldiniz, ${name}!`;
+                }, 2000);
+
+            } catch (error) {
+                let errorMessage = 'Kayıt sırasında bir hata oluştu!';
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'Bu e-posta adresi zaten kullanılıyor!';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Geçersiz e-posta adresi!';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'Şifre çok zayıf!';
+                }
+                
+                showMessage('signupMessage', errorMessage, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Kayıt Ol';
+        }
+
+        // GİRİŞ YAP fonksiyonu
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showMessage('loginMessage', 'Lütfen e-posta ve şifrenizi girin!', 'error');
+                return;
+            }
+
+            const btn = document.querySelector('#loginForm .btn');
+            btn.disabled = true;
+            btn.textContent = 'Giriş Yapılıyor...';
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Kullanıcı bilgilerini al
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                const userData = userDoc.data();
+
+                // Son giriş tarihini güncelle
+                await db.collection('users').doc(user.uid).update({
+                    lastLogin: new Date()
+                });
+
+                showMessage('loginMessage', 'Giriş başarılı!', 'success');
+                
+                setTimeout(() => {
+                    showUserPanel();
+                    document.getElementById('userInfo').textContent = `Hoş geldiniz, ${userData.name}!`;
+                }, 1000);
+
+            } catch (error) {
+                let errorMessage = 'Giriş sırasında bir hata oluştu!';
+                
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı!';
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = 'Hatalı şifre!';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Geçersiz e-posta adresi!';
+                }
+                
+                showMessage('loginMessage', errorMessage, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Giriş Yap';
+        }
+
+        // ÇIKIŞ YAP fonksiyonu
+        function logout() {
+            auth.signOut().then(() => {
+                document.getElementById('userPanel').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('signupName').value = '';
+                document.getElementById('signupEmail').value = '';
+                document.getElementById('signupPassword').value = '';
+                clearMessages();
+            });
+        }
+
+        // Sayfa yüklendiğinde kullanıcı durumunu kontrol et
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Kullanıcı giriş yapmış
+                db.collection('users').doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        showUserPanel();
+                        document.getElementById('userInfo').textContent = `Hoş geldiniz, ${doc.data().name}!`;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
