@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>MTechno - Lamp Login</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js" type="text/javascript"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <style>
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #turnon {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #111;
+      transition: 300ms;
+    }
+
+    .lamp, .turnoff {
+      width: 100px;
+      height: 100px;
+      top: 0;
+      left: 50%;
+      margin-left: -100px;
+      position: absolute;
+      border-bottom: 100px solid #444;
+      border-left: 50px solid transparent;
+      border-right: 50px solid transparent;
+      height: 0;
+      z-index: 11;
+      cursor: pointer;
+      transition: all 300ms ease;
+    }
+
+    .lamp:hover {
+      border-bottom-color: #555;
+    }
+
+    .turnoff {
+      display: none;
+    }
+
+    .turnoff:hover {
+      border-bottom-color: #333;
+    }
+
+    .bulb {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      height: 32px;
+      width: 32px;
+      margin-left: -16px;
+      background: #777;
+      border-radius: 32px;
+      z-index: 9;
+      transition: 300ms;
+      -webkit-transition-delay: 300ms;
+    }
+
+    .string {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      margin-left: 25px;
+      height: 100px;
+      width: 2px;
+      background: #999;
+      display: block;
+      z-index: 10;
+    }
+
+    .light {
+      width: 50px;
+      height: 0;
+      top: 90px;
+      left: 50%;
+      margin: -135px 0 0 -740px;
+      border: 715px solid transparent;
+      border-top: none;
+      border-bottom: 1400px solid #FF8;
+      opacity: 0;
+      position: absolute;
+      transition: 300ms;
+      -webkit-transition-delay: 300ms;
+    }
+
+    .login-text {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      z-index: 12;
+      transition: all 300ms ease;
+      pointer-events: none;
+      letter-spacing: 1px;
+    }
+
+    .login-form {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 370px;
+      padding: 40px 35px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 35px rgba(255, 244, 200, 0.06);
+      color: #fff5d7;
+      text-align: left;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 400ms ease;
+      z-index: 15;
+      box-sizing: border-box;
+    }
+
+    .signup-form {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 370px;
+      padding: 40px 35px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 35px rgba(255, 244, 200, 0.06);
+      color: #fff5d7;
+      text-align: left;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 400ms ease;
+      z-index: 15;
+      box-sizing: border-box;
+    }
+
+    .login-form h2, .signup-form h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fff5d7;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: block;
+      color: #eee2b9;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 13px 14px;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      margin-bottom: 20px;
+      font-size: 15px;
+      color: #333;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .login-btn, .signup-btn {
+      width: 100%;
+      padding: 13px;
+      margin-top: 10px;
+      background: linear-gradient(to bottom, #FFC93C, #FFA500);
+      color: #2d2200;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .login-btn:hover, .signup-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.15);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #eee2b9;
+      transition: color 300ms ease;
+    }
+
+    .close-btn:hover {
+      color: #fff5d7;
+    }
+
+    .switch-form {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .switch-form a {
+      color: #FFC93C;
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .switch-form a:hover {
+      text-decoration: underline;
+    }
+
+    .message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+      font-size: 14px;
+    }
+
+    .success {
+      background: rgba(76, 175, 80, 0.2);
+      color: #a5d6a7;
+      border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+
+    .error {
+      background: rgba(244, 67, 54, 0.2);
+      color: #ef9a9a;
+      border: 1px solid rgba(244, 67, 54, 0.3);
+    }
+
+    #turnon:target .light {
+      opacity: 0.2;
+    }
+
+    #turnon:target .bulb {
+      background: #FAEB83;
+    }
+
+    #turnon:target .turnoff {
+      display: block;
+    }
+
+    #turnon:target .lamp {
+      display: none;
+    }
+
+    #turnon:target .string {
+      -webkit-animation: pull 500ms;
+      animation: pull 500ms;
+    }
+
+    #turnon:target .login-form,
+    #turnon:target .signup-form {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #turnon:target .login-text {
+      opacity: 0;
+    }
+
+    @-webkit-keyframes pull {
+      0% {
+        height: 100px;
+        background: #666;
+      }
+      50% {
+        height: 120px;
+      }
+      100% {
+        height: 100px;
+      }
+    }
+
+    @keyframes pull {
+      0% {
+        height: 100px;
+        background: #666;
+      }
+      50% {
+        height: 120px;
+      }
+      100% {
+        height: 100px;
+      }
+    }
+
+    #turnon:target {
+      background: radial-gradient(circle at center, #222 0%, #111 70%);
+    }
+
+    /* Panda images */
+    .panda-container {
+      position: absolute;
+      top: calc(60% - 310px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 300ms ease, visibility 300ms ease;
+    }
+
+    #turnon:target .panda-container {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .panda-image {
+      max-width: 150px;
+      max-height: 150px;
+      transition: opacity 300ms ease;
+      display: none;
+    }
+
+    .panda-image.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="turnon">
+    <a href="#turnon" class="lamp"></a>
+    <a href="#turnoff" class="turnoff"></a>
+    <div class="string"></div>
+    <div class="bulb"></div>
+    <div class="light"></div>
+    
+    <div class="login-text">MTechno - GİRİŞ YAP</div>
+    
+    <div class="panda-container">
+      <img src="panda-normal.png" alt="Normal Panda" class="panda-image" id="panda-normal">
+      <img src="panda-hidden.png" alt="Hidden Panda" class="panda-image" id="panda-hidden">
+    </div>
+    
+    <!-- Giriş Formu -->
+    <div class="login-form">
+      <button class="close-btn" onclick="window.location.hash='#turnoff'">&times;</button>
+      <h2>MTechno - HOŞ GELDİN</h2>
+      <div id="loginMessage" class="message"></div>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginEmail">E-posta:</label>
+          <input type="email" id="loginEmail" name="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Şifre:</label>
+          <input type="password" id="loginPassword" name="loginPassword" required>
+        </div>
+        <button type="submit" class="login-btn">Giriş Yap</button>
+      </form>
+      <div class="switch-form">
+        Hesabınız yok mu? <a onclick="showSignup()">Kayıt Ol</a>
+      </div>
+    </div>
+
+    <!-- Kayıt Formu -->
+    <div class="signup-form">
+      <button class="close-btn" onclick="window.location.hash='#turnoff'">&times;</button>
+      <h2>MTechno - KAYIT OL</h2>
+      <div id="signupMessage" class="message"></div>
+      <form onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label for="signupName">Ad Soyad:</label>
+          <input type="text" id="signupName" name="signupName" required>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">E-posta:</label>
+          <input type="email" id="signupEmail" name="signupEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Şifre (min. 6 karakter):</label>
+          <input type="password" id="signupPassword" name="signupPassword" required>
+        </div>
+        <button type="submit" class="signup-btn">Kayıt Ol</button>
+      </form>
+      <div class="switch-form">
+        Zaten hesabınız var mı? <a onclick="showLogin()">Giriş Yap</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase konfigürasyonu
+    const firebaseConfig = {
+      apiKey: "AIzaSyDXbv4aK-PyVvfIcsaDK_wGK2taL7vqwmg",
+      authDomain: "login-77be0.firebaseapp.com",
+      projectId: "login-77be0",
+      storageBucket: "login-77be0.firebasestorage.app",
+      messagingSenderId: "631209373102",
+      appId: "1:631209373102:web:11ba283b57b8d12fc02c3f"
+    };
+
+    // Firebase'i başlat
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Form geçiş fonksiyonları
+    function showSignup() {
+      document.querySelector('.login-form').style.opacity = '0';
+      document.querySelector('.login-form').style.visibility = 'hidden';
+      document.querySelector('.signup-form').style.opacity = '1';
+      document.querySelector('.signup-form').style.visibility = 'visible';
+      clearMessages();
+    }
+
+    function showLogin() {
+      document.querySelector('.signup-form').style.opacity = '0';
+      document.querySelector('.signup-form').style.visibility = 'hidden';
+      document.querySelector('.login-form').style.opacity = '1';
+      document.querySelector('.login-form').style.visibility = 'visible';
+      clearMessages();
+    }
+
+    function clearMessages() {
+      document.getElementById('loginMessage').style.display = 'none';
+      document.getElementById('signupMessage').style.display = 'none';
+    }
+
+    // Mesaj göster fonksiyonu
+    function showMessage(elementId, message, type) {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.className = `message ${type}`;
+      element.style.display = 'block';
+    }
+
+    // KAYIT OL fonksiyonu
+    async function handleSignup(event) {
+      event.preventDefault();
+      const name = document.getElementById('signupName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+
+      if (!name || !email || !password) {
+        showMessage('signupMessage', 'Lütfen tüm alanları doldurun!', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage('signupMessage', 'Şifre en az 6 karakter olmalıdır!', 'error');
+        return;
+      }
+
+      const btn = document.querySelector('.signup-btn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Kayıt Yapılıyor...';
+
+      try {
+        // Kullanıcı oluştur
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+
+        // Firestore'a kullanıcı bilgilerini kaydet
+        await db.collection('users').doc(user.uid).set({
+          name: name,
+          email: email,
+          createdAt: new Date(),
+          lastLogin: new Date()
+        });
+
+        showMessage('signupMessage', 'MTechno ailesine hoş geldiniz! Kayıt başarılı.', 'success');
+        
+        // 2 saniye sonra giriş formuna geç
+        setTimeout(() => {
+          showLogin();
+          document.getElementById('loginEmail').value = email;
+          document.getElementById('signupName').value = '';
+          document.getElementById('signupEmail').value = '';
+          document.getElementById('signupPassword').value = '';
+        }, 2000);
+
+      } catch (error) {
+        let errorMessage = 'Kayıt sırasında bir hata oluştu!';
+        
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'Bu e-posta adresi zaten kullanılıyor!';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Geçersiz e-posta adresi!';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'Şifre çok zayıf!';
+        }
+        
+        showMessage('signupMessage', errorMessage, 'error');
+      }
+
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+
+    // GİRİŞ YAP fonksiyonu
+    async function handleLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      if (!email || !password) {
+        showMessage('loginMessage', 'Lütfen e-posta ve şifrenizi girin!', 'error');
+        return;
+      }
+
+      const btn = document.querySelector('.login-btn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Giriş Yapılıyor...';
+
+      try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+
+        // Kullanıcı bilgilerini al
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+
+        // Son giriş tarihini güncelle
+        await db.collection('users').doc(user.uid).update({
+          lastLogin: new Date()
+        });
+
+        showMessage('loginMessage', `MTechno'ya hoş geldiniz, ${userData.name}!`, 'success');
+        
+        setTimeout(() => {
+          alert(`MTechno'ya hoş geldiniz, ${userData.name}! Giriş başarılı.`);
+          window.location.hash = '#turnoff';
+          document.getElementById('loginEmail').value = '';
+          document.getElementById('loginPassword').value = '';
+        }, 1500);
+
+      } catch (error) {
+        let errorMessage = 'Giriş sırasında bir hata oluştu!';
+        
+        if (error.code === 'auth/user-not-found') {
+          errorMessage = 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı!';
+        } else if (error.code === 'auth/wrong-password') {
+          errorMessage = 'Hatalı şifre!';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Geçersiz e-posta adresi!';
+        }
+        
+        showMessage('loginMessage', errorMessage, 'error');
+      }
+
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+
+    // Panda animasyonları (orijinal kod)
+    const passwordInput = document.getElementById('loginPassword');
+    const pandaNormal = document.getElementById('panda-normal');
+    const pandaHidden = document.getElementById('panda-hidden');
+
+    window.addEventListener('DOMContentLoaded', function() {
+      pandaNormal.classList.add('active');
+    });
+
+    passwordInput.addEventListener('focus', function() {
+      pandaNormal.classList.remove('active');
+      pandaHidden.classList.add('active');
+    });
+
+    passwordInput.addEventListener('blur', function() {
+      pandaHidden.classList.remove('active');
+      pandaNormal.classList.add('active');
+    });
+
+    // Sayfa yüklendiğinde kullanıcı durumunu kontrol et
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Kullanıcı zaten giriş yapmış
+        db.collection('users').doc(user.uid).get().then((doc) => {
+          if (doc.exists) {
+            alert(`MTechno'ya tekrar hoş geldiniz, ${doc.data().name}! Zaten giriş yapmışsınız.`);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
